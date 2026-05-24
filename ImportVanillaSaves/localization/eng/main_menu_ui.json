@@ -1,0 +1,6 @@
+{
+    "IMPORT_VANILLA_SAVES-IMPORT_BUTTON.label": "Import Profile",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.title": "Import Save Profile {Id}?",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.description": "All data in [gold]Modded Save Profile {Id}[/gold] will be lost, and it will be replaced by the data from [gold]Unmodded Save Profile {Id}[/gold].\n\n[red][sine]This cannot be undone.[/sine][/red]\n\n[green]This may take a while.[/green]",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.confirm": "Import"
+}

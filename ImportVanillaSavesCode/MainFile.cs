@@ -1,24 +1,74 @@
+using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 
 namespace ImportVanillaSaves.ImportVanillaSavesCode;
 
-//You're recommended but not required to keep all your code in this package and all your assets in the ImportVanillaSaves folder.
 [ModInitializer(nameof(Initialize))]
 public partial class MainFile : Node
 {
-    public const string ModId = "ImportVanillaSaves"; //At the moment, this is used only for the Logger and harmony names.
+    public const string ModId = "ImportVanillaSaves";
 
-    public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
+    public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
+        new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
 
     public static void Initialize()
     {
-        //If you want to use scripts defined in your mod for Godot scenes, uncomment the following line.
-        //Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(Assembly.GetExecutingAssembly());
-     
-        Harmony harmony = new(ModId);
+        Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(Assembly.GetExecutingAssembly());
 
-        harmony.PatchAll();
+        new Harmony(ModId).PatchAll();
+
+        if (Engine.GetMainLoop() is SceneTree tree)
+        {
+            tree.NodeAdded += OnNodeAdded;
+        }
+    }
+
+    private static readonly PackedScene ImportButtonScene = GD.Load<PackedScene>(
+        "res://ImportVanillaSaves/import_button.tscn"
+    );
+
+    private static void OnNodeAdded(Node node)
+    {
+        if (node is not Control control)
+            return;
+
+        if (control.Name != "ProfileScreen")
+            return;
+
+        control.OnReady(() =>
+        {
+            var profileScreen = control;
+
+            for (int i = 1; i <= 3; i++)
+            {
+                var button = profileScreen.GetNode<Control>($"DeleteProfileButton{i}");
+                int index = button.GetIndex();
+
+                profileScreen.RemoveChild(button);
+
+                var importButton = ImportButtonScene.Instantiate();
+                ((ImportSaveButton)importButton).Initialize(i);
+
+                var container = new HBoxContainer() { Position = button.Position };
+                container.AddChild(button);
+                container.AddChild(importButton);
+
+                profileScreen.AddChild(container);
+                profileScreen.MoveChild(container, index);
+            }
+        });
+    }
+}
+
+public static class NodeExtensions
+{
+    public static void OnReady(this Node node, Action action)
+    {
+        if (node.IsNodeReady())
+            action();
+        else
+            node.Ready += action;
     }
 }
