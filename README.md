@@ -7,7 +7,7 @@
 
 Adds a button in the profile select screen to import save data from unmodded profiles.
 
-Supports game versions v0.103.2 and v0.106.1
+Supports game versions v0.103.3 and v0.107.0
 <br/>
 
 ## Installation
