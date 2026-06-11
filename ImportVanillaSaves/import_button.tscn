@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://ImportVanillaSavesCode/ImportSaveButton.cs" id="1_ef1f4"]
 [ext_resource type="Texture2D" uid="uid://b38vbjnft3sn6" path="res://ImportVanillaSaves/import_button.png" id="3_ylth6"]
-[ext_resource type="Script" path="res://ImportVanillaSavesCode/CompatMegaLabel.cs" id="5_4hfre"]
+[ext_resource type="Script" path="res://ImportVanillaSavesCode/ImportVanillaSavesMegaLabel.cs" id="5_4hfre"]
 
 [node name="ImportButton" type="Control"]
 custom_minimum_size = Vector2(80, 80)

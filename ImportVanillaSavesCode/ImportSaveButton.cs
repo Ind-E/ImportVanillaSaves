@@ -65,10 +65,6 @@ public partial class ImportSaveButton : NButton
     {
         ConnectSignals();
         _label = GetNode<MegaLabel>("%MegaLabel");
-        _label.AddThemeFontOverride(
-            "font",
-            GD.Load<Font>("res://themes/kreon_bold_glyph_space_one.tres")
-        );
         _label.SetTextAutoSize(_buttonMesssage.GetFormattedText());
         _icon = GetNode<TextureRect>("Icon");
     }
