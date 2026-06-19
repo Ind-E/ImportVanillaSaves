@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://dm4p48kicr6bt"]
+
+[ext_resource type="Script" path="res://ImportVanillaSavesCode/ProfileSelectButton.cs" id="1_ef1f5"]
+
+[node name="ProfileButton" type="Control"]
+custom_minimum_size = Vector2(74, 74)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 74.0
+offset_bottom = 74.0
+pivot_offset = Vector2(37, 37)
+script = ExtResource("1_ef1f5")
+
+[node name="Icon" type="TextureRect" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(74, 74)
+layout_mode = 0
+offset_right = 74.0
+offset_bottom = 74.0
+pivot_offset = Vector2(37, 37)
+expand_mode = 1
+stretch_mode = 5

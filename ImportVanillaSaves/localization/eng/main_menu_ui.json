@@ -1,7 +1,7 @@
 {
     "IMPORT_VANILLA_SAVES-IMPORT_BUTTON.label": "Import Profile",
-    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.title": "Import Save Profile {Id}?",
-    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.description": "All data in [gold]Modded Save Profile {Id}[/gold] will be lost, and it will be replaced by the data from [gold]Unmodded Save Profile {Id}[/gold].\n\n[red]This cannot be undone.[/red]",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.title": "Import From Save Profile {SourceId}?",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.description": "Press a button below to choose which vanilla profile to import from.\n\n\n\nAll data in [gold]Modded Save Profile {TargetId}[/gold] will be lost, and it will be replaced by the data from [gold]Unmodded Save Profile {SourceId}[/gold].\n\n[red]This cannot be undone.[/red]",
     "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.confirm": "Import",
     "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.importing": "Importing Saves"
 }

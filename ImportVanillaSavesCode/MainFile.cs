@@ -1,6 +1,7 @@
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Modding;
 
 namespace ImportVanillaSaves.ImportVanillaSavesCode;
@@ -25,7 +26,7 @@ public partial class MainFile : Node
         }
     }
 
-    private static readonly PackedScene ImportButtonScene = GD.Load<PackedScene>(
+    private static readonly PackedScene ImportButtonScene = PreloadManager.Cache.GetScene(
         "res://ImportVanillaSaves/import_button.tscn"
     );
 
@@ -48,8 +49,8 @@ public partial class MainFile : Node
 
                 profileScreen.RemoveChild(button);
 
-                var importButton = ImportButtonScene.Instantiate();
-                ((ImportSaveButton)importButton).Initialize(i);
+                var importButton = ImportButtonScene.Instantiate<ImportSaveButton>();
+                importButton.Initialize(i);
 
                 var container = new HBoxContainer() { Position = button.Position };
                 container.AddChild(button);

@@ -3,7 +3,7 @@
   "name": "Import Vanilla Saves",
   "author": "Indi",
   "description": "Adds a button in the profile select screen to import save data from unmodded profiles",
-  "version": "v0.1.2",
+  "version": "v0.2.0",
   "has_pck": true,
   "has_dll": true,
   "dependencies": [],
