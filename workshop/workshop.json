@@ -1,6 +1,6 @@
 ﻿{
   "title": "Import Vanilla Saves",
-  "description": "Adds a button in the profile select screen to import save data from unmodded profiles. I recommend this over mods like \"Vanilla and Modded Saves Merger\" because this mod leaves your vanilla saves untouched, so if your save file is corrupted, you can re-import.\n\n[机器翻译]\n 在个人资料选择界面中添加了一个按钮，用于从未安装模组的个人资料中导入存档数据。我推荐使用此模组而非 \"原版与模组存档合并器\" 等模组，因为该模组不会修改你的原版存档，因此如果存档文件损坏，你可以重新导入。\n\nGitHub: https://github.com/Ind-E/ImportVanillaSaves ",
+  "description": null,
   "visibility": "public",
   "changeNote": "None",
   "tags": ["utility"],

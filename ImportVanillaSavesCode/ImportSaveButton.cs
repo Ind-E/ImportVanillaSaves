@@ -34,6 +34,21 @@ public partial class ImportSaveButton : NButton
         "IMPORT_VANILLA_SAVES-IMPORT_BUTTON.label"
     );
 
+    private static readonly LocString _importingMessage = new(
+        "main_menu_ui",
+        "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.importing"
+    );
+
+    private static readonly LocString _popupCancel = new(
+        "main_menu_ui",
+        "PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel"
+    );
+
+    private static readonly LocString _popupConfirm = new(
+        "main_menu_ui",
+        "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.confirm"
+    );
+
     private TextureRect? _icon;
 
     private MegaLabel? _label;
@@ -43,6 +58,8 @@ public partial class ImportSaveButton : NButton
     private int _associatedDeleteButtonIndex;
 
     private int _profileId;
+
+    private bool _isImporting;
 
     private static readonly AccessTools.FieldRef<
         SaveManager,
@@ -61,6 +78,13 @@ public partial class ImportSaveButton : NButton
         "_runHistorySaveManager"
     );
 
+    private static readonly Func<NVerticalPopup, MegaRichTextLabel> GetBodyLabel =
+        (Func<NVerticalPopup, MegaRichTextLabel>)
+            Delegate.CreateDelegate(
+                typeof(Func<NVerticalPopup, MegaRichTextLabel>),
+                AccessTools.PropertyGetter(typeof(NVerticalPopup), "BodyLabel")
+            );
+
     public override void _Ready()
     {
         ConnectSignals();
@@ -71,6 +95,8 @@ public partial class ImportSaveButton : NButton
 
     protected override void OnRelease()
     {
+        if (_isImporting)
+            return;
         TaskHelper.RunSafely(ConfirmImport());
     }
 
@@ -80,68 +106,149 @@ public partial class ImportSaveButton : NButton
         NModalContainer.Instance!.Add(nGenericPopup);
         _title.Add("Id", _profileId);
         _description.Add("Id", _profileId);
-        if (
-            await nGenericPopup.WaitForConfirmation(
-                _description,
-                _title,
-                new LocString("main_menu_ui", "PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel"),
-                new LocString("main_menu_ui", "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.confirm")
+
+        var vPopup = nGenericPopup.GetNode<NVerticalPopup>("VerticalPopup");
+        vPopup.SetText(_title, _description);
+
+        var confirmationTask = new TaskCompletionSource<bool>();
+
+        vPopup.InitNoButton(_popupCancel, (_) => { });
+        vPopup.InitYesButton(_popupConfirm, (_) => { });
+
+        vPopup.DisconnectSignals();
+
+        vPopup.NoButton.Connect(
+            NClickableControl.SignalName.Released,
+            Callable.From<NButton>(
+                (_) =>
+                {
+                    if (_isImporting)
+                        return;
+                    nGenericPopup.QueueFree();
+                    confirmationTask.TrySetResult(false);
+                }
             )
-        )
+        );
+
+        vPopup.YesButton.Connect(
+            NClickableControl.SignalName.Released,
+            Callable.From<NButton>(
+                (_) =>
+                {
+                    if (_isImporting)
+                        return;
+                    _isImporting = true;
+
+                    vPopup.YesButton.Visible = false;
+                    vPopup.NoButton.Visible = false;
+
+                    TaskHelper.RunSafely(
+                        RunImportAndClose(nGenericPopup, vPopup, confirmationTask)
+                    );
+                }
+            )
+        );
+
+        await confirmationTask.Task;
+    }
+
+    private async Task RunImportAndClose(
+        NGenericPopup popup,
+        NVerticalPopup vPopup,
+        TaskCompletionSource<bool> tcs
+    )
+    {
+        using var cts = new CancellationTokenSource();
+        Task animationTask = AnimatePopupText(vPopup, cts.Token);
+
+        try
         {
-            var profileSaveManager = ProfileSaveManagerRef(SaveManager.Instance);
-            var saveStore = SaveStoreRef(SaveManager.Instance);
-            var runHistoryManager = RunHistorySaveManagerRef(SaveManager.Instance);
+            await Task.Run(PerformImportIO);
+        }
+        finally
+        {
+            cts.Cancel();
+            await animationTask;
+            _isImporting = false;
+        }
 
-            var historyContents = new Dictionary<string, string>();
+        popup.QueueFree();
+        NModalContainer.Instance?.Clear();
+        tcs.TrySetResult(true);
 
-            LoadVanillaSavesPatch.ShouldLoadVanillaSaves = true;
+        NGame.Instance!.ReloadMainMenu();
+        Callable.From(NGame.Instance.MainMenu!.OpenProfileScreen).CallDeferred();
+    }
+
+    private async Task AnimatePopupText(NVerticalPopup vPopup, CancellationToken token)
+    {
+        var bodyLabel = GetBodyLabel(vPopup);
+        if (!IsInstanceValid(bodyLabel))
+            return;
+
+        string baseDesc = _description.GetFormattedText();
+        string importingSuffix = "\n\n" + _importingMessage.GetFormattedText();
+
+        int dots = 1;
+        while (!token.IsCancellationRequested)
+        {
+            if (!IsInstanceValid(bodyLabel))
+                break;
+            bodyLabel.SetTextAutoSize(baseDesc + importingSuffix + new string('.', dots));
+
+            dots = (dots % 3) + 1;
             try
             {
-                MainFile.Logger.Info($"Loading vanilla save data for profile {_profileId}");
+                await Task.Delay(400, token);
+            }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
+        }
+    }
 
-                SaveManager.Instance.SwitchProfileId(_profileId);
+    private void PerformImportIO()
+    {
+        var profileSaveManager = ProfileSaveManagerRef(SaveManager.Instance);
+        var saveStore = SaveStoreRef(SaveManager.Instance);
+        var runHistoryManager = RunHistorySaveManagerRef(SaveManager.Instance);
+        var historyContents = new Dictionary<string, string>();
 
-                profileSaveManager.LoadProfile();
-                SaveManager.Instance.InitProgressData();
-                SaveManager.Instance.InitPrefsData();
+        LoadVanillaSavesPatch.ShouldLoadVanillaSaves = true;
+        try
+        {
+            SaveManager.Instance.SwitchProfileId(_profileId);
+            profileSaveManager.LoadProfile();
+            SaveManager.Instance.InitProgressData();
+            SaveManager.Instance.InitPrefsData();
 
-                string vanillaHistoryDir = RunHistorySaveManager.GetHistoryPath(_profileId);
-                if (saveStore.DirectoryExists(vanillaHistoryDir))
+            string vanillaHistoryDir = RunHistorySaveManager.GetHistoryPath(_profileId);
+            if (saveStore.DirectoryExists(vanillaHistoryDir))
+            {
+                foreach (string fileName in saveStore.GetFilesInDirectory(vanillaHistoryDir))
                 {
-                    foreach (string fileName in saveStore.GetFilesInDirectory(vanillaHistoryDir))
-                    {
-                        string filePath = Path.Combine(vanillaHistoryDir, fileName);
-                        string? content = saveStore.ReadFile(filePath);
-                        if (!string.IsNullOrEmpty(content))
-                        {
-                            historyContents[fileName] = content;
-                        }
-                    }
+                    string filePath = Path.Combine(vanillaHistoryDir, fileName);
+                    string? content = saveStore.ReadFile(filePath);
+                    if (!string.IsNullOrEmpty(content))
+                        historyContents[fileName] = content;
                 }
             }
-            finally
-            {
-                LoadVanillaSavesPatch.ShouldLoadVanillaSaves = false;
-            }
+        }
+        finally
+        {
+            LoadVanillaSavesPatch.ShouldLoadVanillaSaves = false;
+        }
 
-            MainFile.Logger.Info($"Saving vanilla data to modded for profile {_profileId}");
+        SaveManager.Instance.SaveProfile();
+        SaveManager.Instance.SaveProgressFile();
+        SaveManager.Instance.SavePrefsFile();
 
-            SaveManager.Instance.SaveProfile();
-            SaveManager.Instance.SaveProgressFile();
-            SaveManager.Instance.SavePrefsFile();
-
-            runHistoryManager.CreateRunHistoryDirectory();
-            string moddedHistoryDir = RunHistorySaveManager.GetHistoryPath(_profileId);
-
-            foreach (var entry in historyContents)
-            {
-                string destinationPath = Path.Combine(moddedHistoryDir, entry.Key);
-                saveStore.WriteFile(destinationPath, entry.Value);
-            }
-
-            NGame.Instance!.ReloadMainMenu();
-            Callable.From(NGame.Instance.MainMenu!.OpenProfileScreen).CallDeferred();
+        runHistoryManager.CreateRunHistoryDirectory();
+        string moddedHistoryDir = RunHistorySaveManager.GetHistoryPath(_profileId);
+        foreach (var entry in historyContents)
+        {
+            saveStore.WriteFile(Path.Combine(moddedHistoryDir, entry.Key), entry.Value);
         }
     }
 
