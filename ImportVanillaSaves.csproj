@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
     <Import Project=".\Sts2PathDiscovery.props"/>
     <PropertyGroup>
-        <Version>0.1.2</Version>
-
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>true</ImplicitUsings>
         <Nullable>enable</Nullable> <!--Makes code analysis regarding null values stricter.-->
@@ -59,28 +57,6 @@
                 Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
     </Target>
 
-    <Target Name="UpdateManifestVersion" BeforeTargets="BeforeBuild">
-        <PropertyGroup>
-            <ManifestPath>$(MSBuildProjectName).json</ManifestPath>
-        </PropertyGroup>
-
-        <PropertyGroup>
-            <OldContent>$([System.IO.File]::ReadAllText($(ManifestPath)))</OldContent>
-            <NewContent>$([System.Text.RegularExpressions.Regex]::Replace($(OldContent), '("version":\s*")[^"]*', '$1v$(Version)'))</NewContent>
-        </PropertyGroup>
-
-        <WriteLinesToFile
-                Condition="'$(OldContent)' != '$(NewContent)'"
-                File="$(ManifestPath)"
-                Lines="$(NewContent)"
-                Overwrite="true"
-                Encoding="UTF-8" />
-
-        <Message Condition="'$(OldContent)' != '$(NewContent)'"
-                 Text="Updated $(MSBuildProjectName).json to version $(Version)"
-                 Importance="high" />
-    </Target>
-
     <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
         <Message Text="Copying .dll .pdb and .json to mods folder." Importance="high" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
@@ -100,25 +76,18 @@
               ContinueOnError="WarnAndContinue"/>
     </Target>
 
-    <Target Name="ZipRelease" AfterTargets="GodotPublish">
+    <Target Name="CopyToWorkshopFolder" AfterTargets="GodotPublish" Condition="'$(IsInnerGodotExport)' != 'true'">
         <PropertyGroup>
-            <StagingDir>$(TargetDir)Zip/</StagingDir>
-            <ZipFileName>$(TargetDir)$(MSBuildProjectName)_v$(Version).zip</ZipFileName>
+            <WorkshopContentPath>$(MSBuildProjectDirectory)\workshop\content\</WorkshopContentPath>
         </PropertyGroup>
 
-        <RemoveDir Directories="$(StagingDir)" />
-        <Delete Files="$(ZipFileName)" />
+        <Message Text="Copying .dll .json and .pck to workshop/content folder." Importance="high" />
 
-        <MakeDir Directories="$(StagingDir)" />
-
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(StagingDir)" />
-        <Copy SourceFiles="$(MSBuildProjectName).json" DestinationFolder="$(StagingDir)" />
-        <Copy SourceFiles="$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck" DestinationFolder="$(StagingDir)" />
-
-        <ZipDirectory SourceDirectory="$(StagingDir)" DestinationFile="$(ZipFileName)" Overwrite="true" />
-
-        <RemoveDir Directories="$(StagingDir)" />
-
-        <Message Text="Created zip file $(ZipFileName)" Importance="high" />
+        <MakeDir Directories="$(WorkshopContentPath)" Condition="!Exists('$(WorkshopContentPath)')" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(WorkshopContentPath)" />
+        <Copy SourceFiles="$(MSBuildProjectDirectory)\$(AssemblyName).json" DestinationFolder="$(WorkshopContentPath)" />
+        <Copy SourceFiles="$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck"
+              DestinationFolder="$(WorkshopContentPath)"
+              Condition="Exists('$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck')" />
     </Target>
 </Project>
