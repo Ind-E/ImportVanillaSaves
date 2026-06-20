@@ -3,6 +3,6 @@
   "description": null,
   "visibility": "public",
   "changeNote": "None",
-  "tags": ["utility"],
+  "tags": ["utility", "qol"],
   "dependencies": []
 }
