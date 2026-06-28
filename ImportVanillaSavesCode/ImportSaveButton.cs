@@ -300,6 +300,9 @@ public partial class ImportSaveButton : NButton
                 foreach (string fileName in saveStore.GetFilesInDirectory(vanillaHistoryDir))
                 {
                     string filePath = Path.Combine(vanillaHistoryDir, fileName);
+                    if (!filePath.EndsWith("run")) {
+                        continue;
+                    }
                     string? content = saveStore.ReadFile(filePath);
                     if (!string.IsNullOrEmpty(content))
                         historyContents[fileName] = content;
