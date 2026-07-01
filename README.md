@@ -14,4 +14,4 @@ Supports game versions v0.103.3 and v0.107.1
 
 Available on the steam workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3747503308
 
-No new releases will be made since the workshop is now live - if you really want the artifacts then compile it yourself
+No new releases will be made after the workshop update
