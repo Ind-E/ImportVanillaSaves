@@ -1,3 +1,4 @@
+using System.Reflection;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
@@ -279,6 +280,28 @@ public partial class ImportSaveButton : NButton
         }
     }
 
+    private static readonly MethodInfo? GetHistoryPathMethod =
+        AccessTools.Method(
+            typeof(RunHistorySaveManager),
+            nameof(RunHistorySaveManager.GetHistoryPath),
+            [typeof(int), typeof(bool?)]
+        )
+        ?? AccessTools.Method(
+            typeof(RunHistorySaveManager),
+            nameof(RunHistorySaveManager.GetHistoryPath),
+            [typeof(int)]
+        );
+
+    public static string GetHistoryPath(int profileId)
+    {
+        if (GetHistoryPathMethod == null)
+            throw new MissingMethodException();
+
+        return GetHistoryPathMethod.GetParameters().Length == 2
+            ? (string)GetHistoryPathMethod.Invoke(null, [profileId, null])!
+            : (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
+    }
+
     private void PerformImportIO(int sourceId, int targetId)
     {
         var profileSaveManager = ProfileSaveManagerRef(SaveManager.Instance);
@@ -294,13 +317,14 @@ public partial class ImportSaveButton : NButton
             SaveManager.Instance.InitProgressData();
             SaveManager.Instance.InitPrefsData();
 
-            string vanillaHistoryDir = RunHistorySaveManager.GetHistoryPath(sourceId);
+            string vanillaHistoryDir = GetHistoryPath(sourceId);
             if (saveStore.DirectoryExists(vanillaHistoryDir))
             {
                 foreach (string fileName in saveStore.GetFilesInDirectory(vanillaHistoryDir))
                 {
                     string filePath = Path.Combine(vanillaHistoryDir, fileName);
-                    if (!filePath.EndsWith("run")) {
+                    if (!filePath.EndsWith("run"))
+                    {
                         continue;
                     }
                     string? content = saveStore.ReadFile(filePath);
@@ -321,7 +345,7 @@ public partial class ImportSaveButton : NButton
         SaveManager.Instance.SavePrefsFile();
 
         runHistoryManager.CreateRunHistoryDirectory();
-        string moddedHistoryDir = RunHistorySaveManager.GetHistoryPath(targetId);
+        string moddedHistoryDir = GetHistoryPath(targetId);
         foreach (var entry in historyContents)
         {
             saveStore.WriteFile(Path.Combine(moddedHistoryDir, entry.Key), entry.Value);
