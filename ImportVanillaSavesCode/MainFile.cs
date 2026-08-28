@@ -26,22 +26,18 @@ public partial class MainFile : Node
         }
     }
 
-    private static readonly PackedScene ImportButtonScene = PreloadManager.Cache.GetScene(
-        "res://ImportVanillaSaves/import_button.tscn"
-    );
+    private static PackedScene ImportButtonScene =>
+        PreloadManager.Cache.GetScene("res://ImportVanillaSaves/import_button.tscn");
+
+    private static readonly StringName profileScreenName = new("ProfileScreen");
 
     private static void OnNodeAdded(Node node)
     {
-        if (node is not Control control)
+        if (node is not Control profileScreen || profileScreen.Name != profileScreenName)
             return;
 
-        if (control.Name != "ProfileScreen")
-            return;
-
-        control.OnReady(() =>
+        profileScreen.OnReady(() =>
         {
-            var profileScreen = control;
-
             for (int i = 1; i <= 3; i++)
             {
                 var button = profileScreen.GetNode<Control>($"DeleteProfileButton{i}");

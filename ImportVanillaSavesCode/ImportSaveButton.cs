@@ -253,7 +253,7 @@ public partial class ImportSaveButton : NButton
         Callable.From(NGame.Instance.MainMenu!.OpenProfileScreen).CallDeferred();
     }
 
-    private async Task AnimatePopupText(NVerticalPopup vPopup, CancellationToken token)
+    private static async Task AnimatePopupText(NVerticalPopup vPopup, CancellationToken token)
     {
         var bodyLabel = GetBodyLabel(vPopup);
         if (!IsInstanceValid(bodyLabel))
@@ -302,7 +302,7 @@ public partial class ImportSaveButton : NButton
             : (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
     }
 
-    private void PerformImportIO(int sourceId, int targetId)
+    private static void PerformImportIO(int sourceId, int targetId)
     {
         var profileSaveManager = ProfileSaveManagerRef(SaveManager.Instance);
         var saveStore = SaveStoreRef(SaveManager.Instance);
