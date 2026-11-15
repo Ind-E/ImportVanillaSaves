@@ -3,26 +3,15 @@ using MegaCrit.Sts2.Core.Saves;
 
 namespace ImportVanillaSaves.ImportVanillaSavesCode;
 
-public static class LoadVanillaSavesPatch
+[HarmonyPatch(
+    typeof(UserDataPathProvider),
+    nameof(UserDataPathProvider.IsRunningModded),
+    MethodType.Getter
+)]
+internal static class LoadVanillaSavesPatch
 {
     public static bool ShouldLoadVanillaSaves;
 
-    [HarmonyPatch(
-        typeof(UserDataPathProvider),
-        nameof(UserDataPathProvider.IsRunningModded),
-        MethodType.Getter
-    )]
-    public static class PatchGetIsRunningModded
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(ref bool __result)
-        {
-            if (ShouldLoadVanillaSaves)
-            {
-                __result = false;
-                return false;
-            }
-            return true;
-        }
-    }
+    [HarmonyPostfix]
+    public static bool Postfix(bool result) => !ShouldLoadVanillaSaves && result;
 }
