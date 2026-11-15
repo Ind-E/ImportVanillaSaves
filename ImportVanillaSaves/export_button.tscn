@@ -1,0 +1,56 @@
+[gd_scene load_steps=4 format=3 uid="uid://bsgn4vvw32j7k"]
+
+[ext_resource type="Script" path="res://ImportVanillaSavesCode/ExportModdedSaveButton.cs" id="1_eg05y"]
+[ext_resource type="Texture2D" uid="uid://daloo3vlt0v8f" path="res://ImportVanillaSaves/export_button.png" id="2_bi08c"]
+[ext_resource type="Script" path="res://ImportVanillaSavesCode/ImportVanillaSavesMegaLabel.cs" id="3_0s7x2"]
+
+[node name="ImportButton" type="Control"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 80.0
+offset_bottom = 80.0
+pivot_offset = Vector2(40, 40)
+script = ExtResource("1_eg05y")
+
+[node name="Icon" type="TextureRect" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 0
+offset_right = 80.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(40, 40)
+texture = ExtResource("2_bi08c")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MegaLabel" type="Label" parent="."]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = 38.0
+offset_right = 210.0
+offset_bottom = 90.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.6156863, 0.38431373, 0.9019608, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5019608)
+theme_override_constants/shadow_offset_x = 3
+theme_override_constants/shadow_offset_y = 2
+theme_override_constants/shadow_outline_size = 0
+theme_override_font_sizes/font_size = 24
+text = "Export Profile"
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("3_0s7x2")
+AutoSizeEnabled = false
+MinFontSize = 24
+MaxFontSize = 24

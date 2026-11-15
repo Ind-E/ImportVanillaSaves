@@ -9,98 +9,53 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Multiplayer;
-using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Managers;
 
 namespace ImportVanillaSaves.ImportVanillaSavesCode;
 
-public partial class ImportSaveButton : NButton
+public abstract partial class AbstractSaveButton : NButton
 {
     public void Initialize(int profileId)
     {
         _profileId = profileId;
     }
 
-    private static readonly LocString _title = new(
-        "main_menu_ui",
-        "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.title"
-    );
+    public static LocString MkLocStr(string key)
+    {
+        return new("main_menu_ui", $"IMPORT_VANILLA_SAVES-{key}");
+    }
 
-    private static readonly LocString _description = new(
-        "main_menu_ui",
-        "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.description"
-    );
-
-    private static readonly LocString _buttonMesssage = new(
-        "main_menu_ui",
-        "IMPORT_VANILLA_SAVES-IMPORT_BUTTON.label"
-    );
-
-    private static readonly LocString _importingMessage = new(
-        "main_menu_ui",
-        "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.importing"
-    );
-
-    private static readonly LocString _popupCancel = new(
+    private static readonly LocString PopupCancelLoc = new(
         "main_menu_ui",
         "PROFILE_SCREEN.DELETE_CONFIRM_POPUP.cancel"
     );
 
-    private static readonly LocString _popupConfirm = new(
-        "main_menu_ui",
-        "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.confirm"
-    );
-
-    private static readonly PackedScene _profileSelectButtonScene = PreloadManager.Cache.GetScene(
+    private static readonly PackedScene ProfileSelectButtonScene = PreloadManager.Cache.GetScene(
         "res://ImportVanillaSaves/profile_button.tscn"
     );
 
-    private static readonly Texture2D _selectedButtonOutline =
+    private static readonly Texture2D SelectedButtonOutline =
         PreloadManager.Cache.GetAsset<CompressedTexture2D>(
             "res://ImportVanillaSaves/selected_button_outline.png"
         );
 
+    protected abstract LocString TitleLoc { get; }
+    protected abstract LocString DescLoc { get; }
+    protected abstract LocString ButtonLabelLoc { get; }
+    protected abstract LocString WorkingLoc { get; }
+    protected abstract LocString ConfirmLoc { get; }
+
     private TextureRect? _icon;
-
     private MegaLabel? _label;
-
     private Tween? _tween;
-
-    private int _associatedDeleteButtonIndex;
-
     private int _profileId;
-
     private bool _isImporting;
-
-    private static readonly AccessTools.FieldRef<
-        SaveManager,
-        ProfileSaveManager
-    > ProfileSaveManagerRef = AccessTools.FieldRefAccess<SaveManager, ProfileSaveManager>(
-        "_profileSaveManager"
-    );
-
-    private static readonly AccessTools.FieldRef<SaveManager, ISaveStore> SaveStoreRef =
-        AccessTools.FieldRefAccess<SaveManager, ISaveStore>("_saveStore");
-
-    private static readonly AccessTools.FieldRef<
-        SaveManager,
-        RunHistorySaveManager
-    > RunHistorySaveManagerRef = AccessTools.FieldRefAccess<SaveManager, RunHistorySaveManager>(
-        "_runHistorySaveManager"
-    );
-
-    private static readonly Func<NVerticalPopup, MegaRichTextLabel> GetBodyLabel =
-        (Func<NVerticalPopup, MegaRichTextLabel>)
-            Delegate.CreateDelegate(
-                typeof(Func<NVerticalPopup, MegaRichTextLabel>),
-                AccessTools.PropertyGetter(typeof(NVerticalPopup), "BodyLabel")
-            );
 
     public override void _Ready()
     {
         ConnectSignals();
         _label = GetNode<MegaLabel>("%MegaLabel");
-        _label.SetTextAutoSize(_buttonMesssage.GetFormattedText());
+        _label.SetTextAutoSize(ButtonLabelLoc.GetFormattedText());
         _icon = GetNode<TextureRect>("Icon");
     }
 
@@ -108,16 +63,26 @@ public partial class ImportSaveButton : NButton
     {
         if (_isImporting)
             return;
-        TaskHelper.RunSafely(ConfirmImport());
+        TaskHelper.RunSafely(ConfirmPopup());
     }
 
-    private async Task ConfirmImport()
+    private void UpdateLoc(int vanillaProfileId, int moddedProfileId)
+    {
+        TitleLoc.Add("VanillaProfile", vanillaProfileId);
+        TitleLoc.Add("ModdedProfile", moddedProfileId);
+        DescLoc.Add("VanillaProfile", vanillaProfileId);
+        DescLoc.Add("ModdedProfile", moddedProfileId);
+    }
+
+    protected abstract void PerformTransferIO(int vanillaProfileId, int moddedProfileId);
+
+    private async Task ConfirmPopup()
     {
         NGenericPopup nGenericPopup = NGenericPopup.Create()!;
         NModalContainer.Instance!.Add(nGenericPopup);
-        _title.Add("SourceId", _profileId);
-        _description.Add("SourceId", _profileId);
-        _description.Add("TargetId", _profileId);
+
+        int selectedProfileId = _profileId;
+        UpdateLoc(selectedProfileId, _profileId);
 
         var vPopup = nGenericPopup.GetNode<NVerticalPopup>("VerticalPopup");
 
@@ -127,13 +92,11 @@ public partial class ImportSaveButton : NButton
         };
         profileSelectContainer.AddThemeConstantOverride("separation", 20);
 
-        int selectedSourceId = _profileId;
-
-        var selectedButtonOutline = new TextureRect() { Texture = _selectedButtonOutline };
+        var selectedButtonOutline = new TextureRect { Texture = SelectedButtonOutline };
         vPopup.AddChild(selectedButtonOutline);
 
         ProfileSelectButton? initiallyOutlinedButton = null;
-        void positionOutline(ProfileSelectButton btn)
+        void PositionOutline(ProfileSelectButton btn)
         {
             selectedButtonOutline.GlobalPosition =
                 btn.GetGlobalRect().GetCenter() - (selectedButtonOutline.Size / 2);
@@ -141,18 +104,17 @@ public partial class ImportSaveButton : NButton
 
         for (int i = 1; i <= 3; i++)
         {
-            var profileId = i;
-            var btn = _profileSelectButtonScene.Instantiate<ProfileSelectButton>();
+            int profileId = i;
+            var btn = ProfileSelectButtonScene.Instantiate<ProfileSelectButton>();
             btn.Initialize(
                 profileId,
                 () =>
                 {
-                    selectedSourceId = profileId;
-                    _description.Add("SourceId", profileId);
-                    _title.Add("SourceId", profileId);
-                    vPopup.SetText(_title, _description);
+                    selectedProfileId = profileId;
+                    UpdateLoc(selectedProfileId, _profileId);
+                    vPopup.SetText(TitleLoc, DescLoc);
 
-                    positionOutline(btn);
+                    PositionOutline(btn);
                 }
             );
             if (_profileId == profileId)
@@ -166,17 +128,16 @@ public partial class ImportSaveButton : NButton
         profileSelectContainer.SetAnchorsAndOffsetsPreset(LayoutPreset.CenterTop);
         profileSelectContainer.Position += 218 * Vector2.Down;
 
-        vPopup.SetText(_title, _description);
+        vPopup.SetText(TitleLoc, DescLoc);
 
         profileSelectContainer.OnReady(() =>
-            Callable.From(() => positionOutline(initiallyOutlinedButton!)).CallDeferred()
+            Callable.From(() => PositionOutline(initiallyOutlinedButton!)).CallDeferred()
         );
 
         var confirmationTask = new TaskCompletionSource<bool>();
 
-        vPopup.InitNoButton(_popupCancel, (_) => { });
-        vPopup.InitYesButton(_popupConfirm, (_) => { });
-
+        vPopup.InitNoButton(PopupCancelLoc, (_) => { });
+        vPopup.InitYesButton(ConfirmLoc, (_) => { });
         vPopup.DisconnectSignals();
 
         vPopup.NoButton.Connect(
@@ -208,11 +169,11 @@ public partial class ImportSaveButton : NButton
                     vPopup.NoButton.Visible = false;
 
                     TaskHelper.RunSafely(
-                        RunImportAndClose(
+                        ClosePopup(
                             nGenericPopup,
                             vPopup,
                             confirmationTask,
-                            selectedSourceId,
+                            selectedProfileId,
                             _profileId
                         )
                     );
@@ -223,20 +184,20 @@ public partial class ImportSaveButton : NButton
         await confirmationTask.Task;
     }
 
-    private async Task RunImportAndClose(
+    private async Task ClosePopup(
         NGenericPopup popup,
         NVerticalPopup vPopup,
         TaskCompletionSource<bool> tcs,
-        int sourceId,
-        int targetId
+        int vanillaProfileId,
+        int moddedProfileId
     )
     {
         using var cts = new CancellationTokenSource();
-        Task animationTask = AnimatePopupText(vPopup, cts.Token);
+        Task animationTask = AnimatePopupText(vPopup, WorkingLoc, cts.Token);
 
         try
         {
-            await Task.Run(() => PerformImportIO(sourceId, targetId));
+            await Task.Run(() => PerformTransferIO(vanillaProfileId, moddedProfileId));
         }
         finally
         {
@@ -253,20 +214,23 @@ public partial class ImportSaveButton : NButton
         Callable.From(NGame.Instance.MainMenu!.OpenProfileScreen).CallDeferred();
     }
 
-    private static async Task AnimatePopupText(NVerticalPopup vPopup, CancellationToken token)
+    private static async Task AnimatePopupText(
+        NVerticalPopup vPopup,
+        LocString workingMessage,
+        CancellationToken token
+    )
     {
-        var bodyLabel = GetBodyLabel(vPopup);
-        if (!IsInstanceValid(bodyLabel))
+        if (!IsInstanceValid(vPopup.BodyLabel))
             return;
 
-        string importingText = _importingMessage.GetFormattedText();
+        string baseText = workingMessage.GetFormattedText();
 
         int dots = 1;
         while (!token.IsCancellationRequested)
         {
-            if (!IsInstanceValid(bodyLabel))
+            if (!IsInstanceValid(vPopup.BodyLabel))
                 break;
-            bodyLabel.SetTextAutoSize(importingText + new string('.', dots));
+            vPopup.BodyLabel.SetTextAutoSize(baseText + new string('.', dots));
 
             dots = (dots % 3) + 1;
             try
@@ -292,63 +256,26 @@ public partial class ImportSaveButton : NButton
             [typeof(int)]
         );
 
-    public static string GetHistoryPath(int profileId)
+    public static string GetHistoryPath(int profileId, bool? forceModState = null)
     {
         if (GetHistoryPathMethod == null)
             throw new MissingMethodException();
 
-        return GetHistoryPathMethod.GetParameters().Length == 2
-            ? (string)GetHistoryPathMethod.Invoke(null, [profileId, null])!
-            : (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
-    }
+        if (GetHistoryPathMethod.GetParameters().Length == 2)
+            return (string)GetHistoryPathMethod.Invoke(null, [profileId, forceModState])!;
 
-    private static void PerformImportIO(int sourceId, int targetId)
-    {
-        var profileSaveManager = ProfileSaveManagerRef(SaveManager.Instance);
-        var saveStore = SaveStoreRef(SaveManager.Instance);
-        var runHistoryManager = RunHistorySaveManagerRef(SaveManager.Instance);
-        var historyContents = new Dictionary<string, string>();
+        if (!forceModState.HasValue)
+            return (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
 
-        LoadVanillaSavesPatch.ShouldLoadVanillaSaves = true;
+        bool prev = LoadVanillaSavesPatch.ShouldLoadVanillaSaves;
+        LoadVanillaSavesPatch.ShouldLoadVanillaSaves = !forceModState.Value;
         try
         {
-            SaveManager.Instance.SwitchProfileId(sourceId);
-            profileSaveManager.LoadProfile();
-            SaveManager.Instance.InitProgressData();
-            SaveManager.Instance.InitPrefsData();
-
-            string vanillaHistoryDir = GetHistoryPath(sourceId);
-            if (saveStore.DirectoryExists(vanillaHistoryDir))
-            {
-                foreach (string fileName in saveStore.GetFilesInDirectory(vanillaHistoryDir))
-                {
-                    string filePath = Path.Combine(vanillaHistoryDir, fileName);
-                    if (!filePath.EndsWith("run"))
-                    {
-                        continue;
-                    }
-                    string? content = saveStore.ReadFile(filePath);
-                    if (!string.IsNullOrEmpty(content))
-                        historyContents[fileName] = content;
-                }
-            }
+            return (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
         }
         finally
         {
-            LoadVanillaSavesPatch.ShouldLoadVanillaSaves = false;
-        }
-
-        SaveManager.Instance.SwitchProfileId(targetId);
-
-        SaveManager.Instance.SaveProfile();
-        SaveManager.Instance.SaveProgressFile();
-        SaveManager.Instance.SavePrefsFile();
-
-        runHistoryManager.CreateRunHistoryDirectory();
-        string moddedHistoryDir = GetHistoryPath(targetId);
-        foreach (var entry in historyContents)
-        {
-            saveStore.WriteFile(Path.Combine(moddedHistoryDir, entry.Key), entry.Value);
+            LoadVanillaSavesPatch.ShouldLoadVanillaSaves = prev;
         }
     }
 
@@ -358,6 +285,7 @@ public partial class ImportSaveButton : NButton
         _tween?.Kill();
         _tween = CreateTween().SetParallel();
         _tween.TweenProperty(this, "scale", Vector2.One * 1.1f, 0.05);
+        _tween.TweenProperty(this, "modulate", new Color(1.25f, 1.25f, 1.25f, 1), 0.05);
         _tween.TweenProperty(_label, "modulate:a", 1f, 0.2);
         _tween
             .TweenProperty(_label, "position:y", 78f, 0.2)
@@ -375,7 +303,10 @@ public partial class ImportSaveButton : NButton
             .TweenProperty(this, "scale", Vector2.One, 0.5)
             .SetEase(Tween.EaseType.Out)
             .SetTrans(Tween.TransitionType.Expo);
-        _tween.SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Expo);
+        _tween
+            .TweenProperty(this, "modulate", new Color(1f, 1f, 1f, 1), 0.05)
+            .SetEase(Tween.EaseType.Out)
+            .SetTrans(Tween.TransitionType.Expo);
         _tween.TweenProperty(_label, "modulate:a", 0f, 0.05);
     }
 }

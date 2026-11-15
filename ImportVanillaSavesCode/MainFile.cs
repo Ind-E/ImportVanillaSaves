@@ -16,9 +16,11 @@ public partial class MainFile : Node
 
     public static void Initialize()
     {
-        Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(Assembly.GetExecutingAssembly());
+        var assembly = Assembly.GetExecutingAssembly();
 
-        new Harmony(ModId).PatchAll();
+        Godot.Bridge.ScriptManagerBridge.LookupScriptsInAssembly(assembly);
+
+        new Harmony(ModId).PatchAll(assembly);
 
         if (Engine.GetMainLoop() is SceneTree tree)
         {
@@ -28,6 +30,9 @@ public partial class MainFile : Node
 
     private static PackedScene ImportButtonScene =>
         PreloadManager.Cache.GetScene("res://ImportVanillaSaves/import_button.tscn");
+
+    private static PackedScene ExportButtonScene =>
+        PreloadManager.Cache.GetScene("res://ImportVanillaSaves/export_button.tscn");
 
     private static readonly StringName profileScreenName = new("ProfileScreen");
 
@@ -40,17 +45,21 @@ public partial class MainFile : Node
         {
             for (int i = 1; i <= 3; i++)
             {
-                var button = profileScreen.GetNode<Control>($"DeleteProfileButton{i}");
-                int index = button.GetIndex();
+                var deleteProfileButton = profileScreen.GetNode<Control>($"DeleteProfileButton{i}");
+                int index = deleteProfileButton.GetIndex();
 
-                profileScreen.RemoveChild(button);
+                profileScreen.RemoveChild(deleteProfileButton);
 
-                var importButton = ImportButtonScene.Instantiate<ImportSaveButton>();
+                var importButton = ImportButtonScene.Instantiate<ImportVanillaSaveButton>();
                 importButton.Initialize(i);
 
-                var container = new HBoxContainer() { Position = button.Position };
-                container.AddChild(button);
+                var exportButton = ExportButtonScene.Instantiate<ExportModdedSaveButton>();
+                exportButton.Initialize(i);
+
+                var container = new HBoxContainer() { Position = deleteProfileButton.Position };
+                container.AddChild(deleteProfileButton);
                 container.AddChild(importButton);
+                container.AddChild(exportButton);
 
                 profileScreen.AddChild(container);
                 profileScreen.MoveChild(container, index);

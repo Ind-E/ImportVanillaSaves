@@ -1,7 +1,13 @@
 {
-    "IMPORT_VANILLA_SAVES-IMPORT_BUTTON.label": "Import Profile",
-    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.title": "Import From Save Profile {SourceId}?",
-    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.description": "Press a button below to choose which vanilla profile to import from.\n\n\n\nAll data in [gold]Modded Save Profile {TargetId}[/gold] will be lost, and it will be replaced by the data from [gold]Unmodded Save Profile {SourceId}[/gold].\n\n[red]This cannot be undone.[/red]",
+    "IMPORT_VANILLA_SAVES-IMPORT_BUTTON.label": "Import Vanilla Profile",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.title": "Import Vanilla Save Profile {VanillaProfile}?",
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.description": "Press a button below to choose which vanilla profile to import from.\n\n\n\nAll data in [gold]Modded Save Profile {ModdedProfile}[/gold] will be lost, and it will be replaced by the data from [gold]Unmodded Save Profile {VanillaProfile}[/gold].\n\n[red]This cannot be undone.[/red]",
     "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.confirm": "Import",
-    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.importing": "Importing Saves"
+    "IMPORT_VANILLA_SAVES-IMPORT_CONFIRM_POPUP.importing": "Importing Save",
+
+    "IMPORT_VANILLA_SAVES-EXPORT_BUTTON.label": "Export Modded Profile",
+    "IMPORT_VANILLA_SAVES-EXPORT_CONFIRM_POPUP.title": "Export Modded Save Profile {ModdedProfile}?",
+    "IMPORT_VANILLA_SAVES-EXPORT_CONFIRM_POPUP.description": "Press a button below to choose which modded profile to export.\n\n\n\nAll data in [gold]Vanilla Save Profile {VanillaProfile}[/gold] will be lost, and it will be replaced by the data from [gold]Modded Save Profile {ModdedProfile}[/gold].\n\n[red]This cannot be undone.[/red]",
+    "IMPORT_VANILLA_SAVES-EXPORT_CONFIRM_POPUP.confirm": "Export",
+    "IMPORT_VANILLA_SAVES-EXPORT_CONFIRM_POPUP.exporting": "Exporting Save"
 }
