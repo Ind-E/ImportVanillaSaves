@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Saves.Managers;
 
 namespace ImportVanillaSaves.ImportVanillaSavesCode;
 
@@ -26,7 +27,7 @@ public partial class ImportVanillaSaveButton : AbstractSaveButton
             SaveManager.Instance.InitProgressData();
             SaveManager.Instance.InitPrefsData();
 
-            string vanillaHistoryDir = GetHistoryPath(vanillaProfileId);
+            string vanillaHistoryDir = RunHistorySaveManager.GetHistoryPath(vanillaProfileId);
             if (saveStore.DirectoryExists(vanillaHistoryDir))
             {
                 foreach (string fileName in saveStore.GetFilesInDirectory(vanillaHistoryDir))
@@ -53,7 +54,7 @@ public partial class ImportVanillaSaveButton : AbstractSaveButton
         SaveManager.Instance.SavePrefsFile();
 
         runHistoryManager.CreateRunHistoryDirectory();
-        string moddedHistoryDir = GetHistoryPath(moddedProfileId);
+        string moddedHistoryDir = RunHistorySaveManager.GetHistoryPath(moddedProfileId);
         foreach (var entry in historyContents)
         {
             saveStore.WriteFile(Path.Combine(moddedHistoryDir, entry.Key), entry.Value);

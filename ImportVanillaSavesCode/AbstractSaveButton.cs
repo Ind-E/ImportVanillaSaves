@@ -1,6 +1,4 @@
-using System.Reflection;
 using Godot;
-using HarmonyLib;
 using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Assets;
 using MegaCrit.Sts2.Core.Helpers;
@@ -9,7 +7,6 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Multiplayer;
-using MegaCrit.Sts2.Core.Saves.Managers;
 
 namespace ImportVanillaSaves.ImportVanillaSavesCode;
 
@@ -241,41 +238,6 @@ public abstract partial class AbstractSaveButton : NButton
             {
                 break;
             }
-        }
-    }
-
-    private static readonly MethodInfo? GetHistoryPathMethod =
-        AccessTools.Method(
-            typeof(RunHistorySaveManager),
-            nameof(RunHistorySaveManager.GetHistoryPath),
-            [typeof(int), typeof(bool?)]
-        )
-        ?? AccessTools.Method(
-            typeof(RunHistorySaveManager),
-            nameof(RunHistorySaveManager.GetHistoryPath),
-            [typeof(int)]
-        );
-
-    public static string GetHistoryPath(int profileId, bool? forceModState = null)
-    {
-        if (GetHistoryPathMethod == null)
-            throw new MissingMethodException();
-
-        if (GetHistoryPathMethod.GetParameters().Length == 2)
-            return (string)GetHistoryPathMethod.Invoke(null, [profileId, forceModState])!;
-
-        if (!forceModState.HasValue)
-            return (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
-
-        bool prev = LoadVanillaSavesPatch.ShouldLoadVanillaSaves;
-        LoadVanillaSavesPatch.ShouldLoadVanillaSaves = !forceModState.Value;
-        try
-        {
-            return (string)GetHistoryPathMethod.Invoke(null, [profileId])!;
-        }
-        finally
-        {
-            LoadVanillaSavesPatch.ShouldLoadVanillaSaves = prev;
         }
     }
 
